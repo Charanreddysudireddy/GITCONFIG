@@ -1,0 +1,83 @@
+hadoop fs -mv /landing/bmt/archive/BMT_6878_Quota_Enable_List-priyac_20220127123650000.xlsx /dataingestion/bmt/data/
+
+/landing/bmt/archive/BMT_6878_Quota_Enable_List-priyac_20220127123650000.xlsx
+
+
+******************* This process should be done in 7025 server *************************************
+
+===================================================================================================================
+======================  we have to follow this process if we missed the file placed by the user  ==============
+
+select count(1) from sales_bm.BM_Quota_Enable_list;   ==== check this for count in hive(ingestion)
+select count(1)sales_bm.Dim_BM_Quota_Enable_List;     ==== check this for count in hive(Distillation)
+
+check in distillation and consumption whether the data is loaded or not
+select * from cntrl.vw_ws5_uow_control where uow_id in (10415,20415)
+
+
+select * from [CNTRL].[FILE_CONTROL_INGESTION] where upper(HST_TABLE_NAME) like upper('%BM_Quota_Enable_list%')  === from this we will get source path and archive path
+
+cd source path (/dataingestion/bmt/data/) ==== change directory to source path
+cd /dataingestion/bmt/data/  --- source path
+ls -lrt | grep BMT_6878_Quota_Enable_List    === to check source files
+
+
+hadoop fs -ls/landing/bmt/archive/[archive path(/landing/bmt/archive/)] ==== to check files in archive path
+hadoop fs -ls /landing/bmt/archive/*20220131*  {date should change}
+
+Here we can find latest file which is in archive folder, now we have to move this file to source path 
+
+
+Use the following command to get file into source path 
+hadoop fs -get  /landing/bmt/archive/BMT_6878_Quota_Enable_List-priyac_20220131115952000.xlsx
+
+
+after renaming(rename the date )---- to rename use the following command  {mv file_name filename(with diff name.. mostly change the date)}
+ mv BMT_6878_Quota_Enable_List-priyac_20220131115952000.xlsx BMT_6878_Quota_Enable_List-priyac_20220201115952000.xlsx
+
+ls -lrt | grep BMT_6878_Quota_Enable_List   ====  check whether the file is renamed or not
+
+
+
+Then we have to trigger the TERA BMT EP  (make sure that active flag set to 'Y' for ingestion(769), distillation and consumption uow ID's (10415,20415))
+select * from CNTRL.vw_WS2_FILE_CONTROL_INGESTION WHERE UOW_ID=769
+UPDATE  CNTRL.vw_WS2_FILE_CONTROL_INGESTION SET ACTIVE_FLAG = 'Y' WHERE UOW_ID=769
+select * from cntrl.vw_ws5_uow_control where uow_id in (10415,20415)
+update cntrl.vw_ws5_uow_control set active_flag ='Y' where uow_id in (10415,20415)
+
+Validate the data at consumption after job completed. and acknowledge the user with screen shot 
+
+select * from [quota_and_assignments].[Dim_BM_Quota_Enable_List]
+select * from [quota_and_assignments].[Dim_BM_Quota_Enable_List_Consumption_View]
+
+
+
+After validation set active flags to 'N' (make sure that active flag set to 'N' for ingestion(769), distillation and consumption uow ID's (10415,20415))
+UPDATE  CNTRL.vw_WS2_FILE_CONTROL_INGESTION SET ACTIVE_FLAG = 'Y' WHERE UOW_ID=769
+update cntrl.uow_control set active_flag ='N' where uow_id in (10415,20415)
+
+
+=======================================================================================================================================
+
+UPDATE CNTRL.VW_WS5_UOW_CONTROL SET ACTIVE_FLAG = 'Y' WHERE UOW_ID IN (10415,20415)
+
+update cntrl.vw_ws5_uow_control set active_flag ='N' where uow_id in (10415,20415)
+
+select * from cntrl.vw_ws5_uow_control where uow_id in (10415,20415)
+
+select * FROM CNTRL.CONTEXT_CONTROL_R01 WHERE UOW_ID IN (10415)
+
+SELECT COUNT(1) FROM sales_bm.Dim_BM_Quota_Enable_List
+
+select * from CNTRL.vw_WS2_FILE_CONTROL_INGESTION WHERE UOW_ID=769
+
+UPDATE  CNTRL.vw_WS2_FILE_CONTROL_INGESTION SET ACTIVE_FLAG = 'N' WHERE UOW_ID=769
+
+select * from CNTRL.BOW_CONTROL WHERE uow_ID = 10415
+
+
+
+
+
+
+
